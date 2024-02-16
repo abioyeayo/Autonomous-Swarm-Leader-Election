@@ -8,8 +8,9 @@ from .aircraft import Aircraft
 from .towers import Towers
 from .tasks import TaskManager
 from src.logging import Logger
-from LeaderElectionAlgorithms import Gateway_Heirarchy
-from LeaderElectionAlgorithms import Age_Ring_Heirarchy
+from LeaderElectionAlgorithms import Gateway_Heirarchy, Age_Ring_Heirarchy,Random_Election
+
+from .waypoint_functions import update_waypoints
 
 
 class State:
@@ -59,7 +60,7 @@ class State:
          
         for _ in range(N): # Add N aircraft
             self.aircraft.add_ac(self.bounds)
-            
+        
         self.log() # Begin the logging
     
                     
@@ -72,11 +73,11 @@ class Environment:
         self.running = False # A flag for if the sim is running
         self.grid_centre = grid_centre # The centre coordinates for the middle hex
         
-        self.__state = State(bounds, sim_t) # Instantiate the state (aircraft)
+        self.__state = State(bounds, sim_t, 0) # Instantiate the state (aircraft)
         
         self.towers = self.gen_towers(random_out=0) # Generate the towers (generated in a spiral from the centre.)
         self.task_manager = TaskManager(bounds, self.towers, n_tasks)
-        self.leader_election = Age_Ring_Heirarchy(self.towers.n_towers)
+        self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
         self.start_time = 0
         self.logger = Logger()
         self.sim_run = 0
@@ -84,6 +85,8 @@ class Environment:
         self.t_delta = time.perf_counter()
         
         self.bounds = bounds
+        
+        self.seeds = [95854,  2665, 77796, 44574, 27190, 97559,   946, 33940, 53924, 73451, 78627, 18778, 41489, 55854, 11455, 81799]
         
         
     @property # The sim time formatted in Hours:Minutes:Seconds.miliseconds
@@ -117,16 +120,15 @@ class Environment:
        
        return towers
    
-    def run_n (self, n = 5, ts = 0.01, N=30, n_tasks=5, path='out/basic', seed = None):
+    def run_n (self, n = 5, ts = 0.01, N=30, n_tasks=5, path='out/basic', seed = None, ui = None, info = None):
         self.max_batches = n
         self.t_delta = time.perf_counter()
         for _ in range(n):
             self.sim_run+=1
             self.reset(N, n_tasks, seed = seed)
             self.run(ts)
-            self.leader_election.save_log(f'{path}_run{self.sim_run}')
-            
-            
+            self.leader_election.save_log(f'{path}_aircraft_data{self.sim_run}')
+            self.task_manager.save_log(f'{path}_task_data{self.sim_run}')
         
     def run(self, ts=0.01):
         """The main run loop
@@ -144,18 +146,18 @@ class Environment:
             s = time.perf_counter()
 
             # if update_counter % 60 == 0:
+            self.state.waypoints = update_waypoints(self.state.position_error, self.state.waypoints, self.leader_election.are_2IC, self.state.bounds, self.towers, np.where(self.state.active==True)[0], self.task_manager)
             self.__state.update(ts) # Update the aircraft environment
-            self.towers.update_towers(self.__state.aircraft) # Update the tower environment
-            self.task_manager.update(round(update_counter*self.ts,2), self.towers, self.__state, round(self.__state.sim_t/1000,2), self.ts)
+            self.towers.update_towers(self.__state.aircraft,self.ts) # Update the tower environment
+            self.task_manager.update(round(update_counter*self.ts,2), self.towers, self.__state, round(self.__state.sim_t/1000,2), self.ts, self.leader_election.are_2IC)
             heuristics_log = self.leader_election.update(self.__state.aircraft, self.towers, np.floor(self.__state.sim_t/1000))
-            
             self.logger.log_towers(self.towers)
             self.leader_election.log(self.__state.aircraft, self.towers, np.floor(self.__state.sim_t/1000), heuristics = heuristics_log)
             update_counter += 1
             sim_t = update_counter*self.ts
 
             if not any(ac[-1] for ac in self.state):
-                self.running = False # Exit the simulation when no aircraft are active
+                self.running = False # Exit the simulation when no aircraft are active\
     
     def stop(self):
         """Manual stopping of the simulation (for UI version)
@@ -167,12 +169,15 @@ class Environment:
     def reset(self, N=30, n_tasks=5, seed = None):
         if seed is not None:
             np.random.seed(seed)
+            
+        np.random.seed(self.seeds[self.sim_run-1])
         
         
         self.__state.reset(0, N)
+        print(self.state.max_flight_times)
         self.towers = self.gen_towers(random_out=0) # Generate the towers (generated in a spiral from the centre.)
         self.task_manager = TaskManager(self.bounds, self.towers, n_tasks)
-        self.leader_election = Age_Ring_Heirarchy(self.towers.n_towers)
+        self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
         self.start_time = 0
         self.logger = Logger()
     

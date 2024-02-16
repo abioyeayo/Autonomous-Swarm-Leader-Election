@@ -1,7 +1,7 @@
 import numpy as np
 
 class TaskManager:
-    def __init__(self, area, towers, n_tasks = 5, random_tasks = True, n_random = 3, rand_interval = (12,60)):
+    def __init__(self, area, towers, n_tasks = 0, random_tasks = True, n_random = 7, rand_interval = (30,30)):
         self.area = area
         tasks = np.round(np.random.uniform((0,0), area,(n_tasks,2)),0)
         self.tasks, self.tower_assignments = self.check_in_tower(tasks, towers)
@@ -12,6 +12,10 @@ class TaskManager:
         self.rand_interval = rand_interval
         
         self.next_random = np.random.choice(self.rand_interval)
+        self.log = []
+    
+    def save_log(self, path):
+        np.save(path, self.log)
     
     def add_tasks(self, towers, n_tasks = 1):
         tasks = np.round(np.random.uniform((0,0), self.area,(n_tasks,2)),0)
@@ -29,10 +33,13 @@ class TaskManager:
         
         self.total_tasks += n_tasks
     
-    def check_in_tower(self, tasks, towers):
+    def check_in_tower(self, tasks, towers, random_active=True):
         task, tower = towers.get_tower(tasks)
         active_status = towers.active[tower]
 
+        if random_active:
+            return tasks,tower
+        
         while not all(active_status):
             invalid = np.where(active_status == False)[0]
             
@@ -43,33 +50,44 @@ class TaskManager:
         
         return tasks,tower
     
-    def update(self, update_counter, towers, aircraft, sim_time,ts):
+    def update(self, update_counter, towers, aircraft, sim_time,ts, active_gateways):
         if sim_time>= self.next_random:
             self.add_tasks(towers,n_tasks=self.n_random)
             self.next_random += np.random.choice(self.rand_interval)
-            
+
         if len(self.compleated)<len(self.tasks):
             d = len(self.tasks)-len(self.compleated)
-            self.tasks = np.append(self.tasks, [0]*d, axis=0)
-        
+            self.compleated = np.append(self.compleated, np.zeros(d))
+
+        cycle = []
         for i in range(len(self.tower_assignments)):
+            if not towers.active[self.tower_assignments[i]]:
+                continue
+            
+            tower_idx = self.tower_assignments[i]
             dupes = len(np.where(self.tower_assignments == self.tower_assignments[i])[0])
             reg_ac = towers.aircraft_list[self.tower_assignments[i]]
             ac_active_status = aircraft.aircraft.active[reg_ac]
             active_idxs = np.where(ac_active_status)[0]
             active_ac = np.array(reg_ac)[active_idxs]
-            
-            self.compleated[i] += np.round((len(active_idxs)*ts)/dupes,3)
-            
+            gateway = active_gateways[tower_idx]
+            if gateway:
+                active_ac = active_ac[active_ac != gateway]
+
+            update_val = np.round((len(active_idxs)*ts)/dupes,3)*1.5
+            self.compleated[i] += update_val
+
+            cycle.append([i, len(active_idxs), update_val, self.compleated])
+
             if len(active_ac)> 0:
-            
-                centre = towers.centres[self.tower_assignments[i]]
-                
-                accels = np.clip(-(aircraft.aircraft.position_error[active_ac]-centre), -aircraft.aircraft.max_accel, aircraft.aircraft.max_accel)
-                aircraft.aircraft.accelerations[active_ac,:] = accels
-                
-        
-        
+                if gateway:
+                    centre = aircraft.aircraft.position_error[gateway]
+
+                else:
+                    centre = towers.centres[self.tower_assignments[i]]
+        self.log.append([cycle, self.total_tasks, len(self.tasks)])
+
+
         finished = np.where(self.compleated >=100.)[0]
         if len(finished) > 0:
             self.update_tasks(finished, towers)

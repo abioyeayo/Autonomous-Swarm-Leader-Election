@@ -6,10 +6,10 @@ import pyglet
 
 
 SCREEN_SIZE = (1200,900)
-N_SIMS = 5
-N_TASKS = 15
-TS = 1/60
-PATH = 'out/seed_test'
+N_SIMS = 10
+N_TASKS = 10
+TS = 1/30
+PATH = 'out/dump/dump'
 N_AC = 30
 SEED = None
 
@@ -19,12 +19,12 @@ env = Environment(bounds=SCREEN_SIZE,grid_centre=np.array(SCREEN_SIZE)/2, n_task
 ui = SimUI(env, screen_size=(SCREEN_SIZE[0], SCREEN_SIZE[1]+35))
 info = InfoUI((400,900), env)
 
-env_thread = threading.Thread(target=env.run_n,args=[N_SIMS, TS, N_AC, N_TASKS, PATH, SEED], daemon=True)
+env_thread = threading.Thread(target=env.run_n,args=[N_SIMS, TS, N_AC, N_TASKS, PATH, SEED, ui,info], daemon=True)
 
 env_thread.start()
 # ui.run()
 # pyglet.clock.schedule_interval(lambda dt: ui.flip(), 1)
-pyglet.app.run(1/60)
+pyglet.app.run(1/30)
 
 log = env.stop()
 env_thread.join()
@@ -37,27 +37,15 @@ axes[0].set_xlim(0,SCREEN_SIZE[0]/env.scale)
 axes[0].set_ylim(SCREEN_SIZE[1]/env.scale,0)
 axes[0].set_title(f'Positions (Scale={env.scale})')
 
-time_series = np.arange(0,log.shape[0],1)/10
+time_series = np.arange(0,log.shape[0],1)*TS
 
-axes[1].plot(time_series,np.clip(1-(log[:,:,7]/log[:,:,8]),0,1))
+axes[1].plot(time_series,np.clip(1-((log[:,:,7]+(env.state.flight_time_bounds[-1]-log[:,:,8]))/env.state.flight_time_bounds[-1]),0,1))
 axes[1].set_xlim(0,time_series[-1])
 axes[1].set_title('Remaining Battery %')
 
 axes[2].plot(time_series,np.clip(log[:,:,8]-log[:,:,7],0, np.inf))
 axes[2].set_xlim(0,time_series[-1])
 axes[2].set_title('Remaining Flight Time (s)')
-
-# axes[1,0].plot(time_series,log[:,:,4]%360)
-# axes[1,0].set_xlim(0,time_series[-1])
-# axes[1,0].set_title('Headings')
-
-# axes[1,1].plot(time_series,log[:,:,5])
-# axes[1,1].set_xlim(0,time_series[-1])
-# axes[1,1].set_title('X Accelerations')
-
-# axes[1,2].plot(time_series,log[:,:,6])
-# axes[1,2].set_xlim(0,time_series[-1])
-# axes[1,2].set_title('Y Accelerations')
 
 
 
