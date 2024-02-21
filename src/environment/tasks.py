@@ -1,7 +1,8 @@
 import numpy as np
 
 class TaskManager:
-    def __init__(self, area, towers, n_tasks = 0, random_tasks = True, n_random = 7, rand_interval = (30,30)):
+    # 20240220_1300h - AOA disabled random task appearing during simulation
+    def __init__(self, area, towers, n_tasks = 0, random_tasks = False, n_random = 7, rand_interval = (30,30)):
         self.area = area
         tasks = np.round(np.random.uniform((0,0), area,(n_tasks,2)),0)
         self.tasks, self.tower_assignments = self.check_in_tower(tasks, towers)
@@ -51,9 +52,10 @@ class TaskManager:
         return tasks,tower
     
     def update(self, update_counter, towers, aircraft, sim_time,ts, active_gateways):
-        if sim_time>= self.next_random:
-            self.add_tasks(towers,n_tasks=self.n_random)
-            self.next_random += np.random.choice(self.rand_interval)
+        if self.random_tasks:
+            if sim_time>= self.next_random:
+                self.add_tasks(towers,n_tasks=self.n_random)
+                self.next_random += np.random.choice(self.rand_interval)
 
         if len(self.compleated)<len(self.tasks):
             d = len(self.tasks)-len(self.compleated)

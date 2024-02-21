@@ -53,10 +53,11 @@ def get_gateway_leaders(aircraft, towers, active_aircraft, previous_gateways, ne
             continue
 
 
+        # leaders.append(candidates[np.argmax(aircraft.flight_times[candidates])])
         # Since tower_ac list is already sorted, return the olders i.e. the
         # agent with the smaller number was initialised first
-        # print(aircraft.flight_times[candidates])
-        leaders.append(candidates[np.argmax(aircraft.flight_times[candidates])])
+        # print(candidates)
+        leaders.append(candidates[0])
 
         heuristics = get_heuristics(towers, k, candidates, aircraft, with_error=True)
         true_heuristics = get_heuristics(towers, k, candidates, aircraft, with_error= False)

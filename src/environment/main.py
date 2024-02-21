@@ -69,7 +69,7 @@ class State:
 class Environment:
     """This class holds and runs the environment. It is designed to be executed from a child thread from the UI.
     """
-    def __init__(self, bounds:(float,float), grid_centre,sim_t:float = 0.0, n_tasks = 5):
+    def __init__(self, bounds:(float,float), grid_centre,sim_t:float = 0.0, n_tasks = 5, leader_election_alg:int = 0):
         self.running = False # A flag for if the sim is running
         self.grid_centre = grid_centre # The centre coordinates for the middle hex
         
@@ -77,7 +77,7 @@ class Environment:
         
         self.towers = self.gen_towers(random_out=0) # Generate the towers (generated in a spiral from the centre.)
         self.task_manager = TaskManager(bounds, self.towers, n_tasks)
-        self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
+        # self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
         self.start_time = 0
         self.logger = Logger()
         self.sim_run = 0
@@ -87,6 +87,18 @@ class Environment:
         self.bounds = bounds
         
         self.seeds = [95854,  2665, 77796, 44574, 27190, 97559,   946, 33940, 53924, 73451, 78627, 18778, 41489, 55854, 11455, 81799]
+
+        self.leader_election_alg = leader_election_alg
+
+        # 20240220_1452h - AOA update to make switching leader election algorithm easier from the environment definition
+        if self.leader_election_alg == 0:
+            self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
+        elif self.leader_election_alg == 1:
+            self.leader_election = Age_Ring_Heirarchy(self.towers.n_towers)
+        elif self.leader_election_alg == 2:
+            self.leader_election = Random_Election(self.towers.n_towers)
+        else: 
+            self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
         
         
     @property # The sim time formatted in Hours:Minutes:Seconds.miliseconds
@@ -177,7 +189,18 @@ class Environment:
         print(self.state.max_flight_times)
         self.towers = self.gen_towers(random_out=0) # Generate the towers (generated in a spiral from the centre.)
         self.task_manager = TaskManager(self.bounds, self.towers, n_tasks)
-        self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
+
+        # self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
+        # 20240220_1452h - AOA update to make switching leader election algorithm easier from the environment definition
+        if self.leader_election_alg == 0:
+            self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
+        elif self.leader_election_alg == 1:
+            self.leader_election = Age_Ring_Heirarchy(self.towers.n_towers)
+        elif self.leader_election_alg == 2:
+            self.leader_election = Random_Election(self.towers.n_towers)
+        else: 
+            self.leader_election = Gateway_Heirarchy(self.towers.n_towers)
+
         self.start_time = 0
         self.logger = Logger()
     

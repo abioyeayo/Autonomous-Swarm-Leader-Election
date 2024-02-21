@@ -6,14 +6,16 @@ import pyglet
 
 
 SCREEN_SIZE = (1200,900)
-N_SIMS = 10
-N_TASKS = 10
+N_SIMS = 1 # 10
+N_TASKS = 0 #10
 TS = 1/30
 PATH = 'out/dump/dump'
 N_AC = 30
 SEED = None
+ELEC_ALG = 1    # Select leader election algorithm: 0 - gateway_heirarchy, 1 - age_ring_heirarchy, 2 - random_election
 
-env = Environment(bounds=SCREEN_SIZE,grid_centre=np.array(SCREEN_SIZE)/2, n_tasks=N_TASKS)
+# 20240220_1452h - AOA added leader_election_alg option to make switching leader election algorithm easier from the environment definition
+env = Environment(bounds=SCREEN_SIZE,grid_centre=np.array(SCREEN_SIZE)/2, n_tasks=N_TASKS, leader_election_alg=ELEC_ALG)
 
 # ui = UI(env, screen_size=(SCREEN_SIZE[0], SCREEN_SIZE[1]+35))
 ui = SimUI(env, screen_size=(SCREEN_SIZE[0], SCREEN_SIZE[1]+35))

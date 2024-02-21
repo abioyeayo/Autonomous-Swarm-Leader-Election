@@ -44,8 +44,8 @@ class Towers:
         return idx, tower_assignments
 
         
-    
-    def update_towers(self, aircraft,ts, random = True):
+    # 20240220_1300h - AOA disabled random tower switching off and on
+    def update_towers(self, aircraft,ts, random = False):
         ac, tower_assignments = self.get_tower(aircraft.positions)
 
 
