@@ -17,7 +17,8 @@ class Leader_Election:
     
     def save_log(self, path):
         np.save(path, self.logging)
-        np.save(f'{path}-heuristics', self.true_logging)
+        # 20240222_0251h - AOA disabled heuristics logging due to inhomgeneous array shape value error
+        # np.save(f'{path}-heuristics', self.true_logging)
     
     def log(self, aircraft, towers, sim_t, heuristics=[]):
         state = []
@@ -28,7 +29,9 @@ class Leader_Election:
             local_state = np.array([sim_t, i, ac if ac != None else -1, len(np.intersect1d(towers.aircraft_list[i], active_idxs)),towers.active[i]])
             state.append(local_state)
         
-        if self.logging == []:
+        # 20240220_0930h - AOA fixed direct array logic comparison error freezing simulation by checking no. of elements in the array instead
+        # if self.logging == []:
+        if len(self.logging) == 0:
             self.logging = np.array([state])
         else:
             self.logging = np.append(self.logging, [state], axis=0)

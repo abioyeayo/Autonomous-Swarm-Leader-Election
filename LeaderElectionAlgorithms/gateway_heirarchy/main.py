@@ -17,7 +17,8 @@ class Leader_Election:
     
     def save_log(self, path):
         np.save(path, self.logging)
-        np.save(f'{path}-heuristics', self.true_logging)
+        # 20240222_0251h - AOA disabled heuristics logging due to inhomgeneous array shape value error
+        # np.save(f'{path}-heuristics', self.true_logging)
     
     def log(self, aircraft, towers, sim_t, heuristics=[]):
         state = []

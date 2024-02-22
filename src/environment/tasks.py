@@ -87,6 +87,10 @@ class TaskManager:
 
                 else:
                     centre = towers.centres[self.tower_assignments[i]]
+        
+        # 20240222_0224h - AOA fixed ValueError due to array inhomogeneous shape
+        if len(cycle) == 0:
+            cycle = 0
         self.log.append([cycle, self.total_tasks, len(self.tasks)])
 
 

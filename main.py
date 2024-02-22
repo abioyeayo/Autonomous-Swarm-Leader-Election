@@ -6,13 +6,13 @@ import pyglet
 
 
 SCREEN_SIZE = (1200,900)
-N_SIMS = 1 # 10
-N_TASKS = 0 #10
-TS = 1/30
+N_SIMS = 3          # 10 - specifies the number of simulations to run sequentially
+N_TASKS = 0         #10 - specifies the number of tasks
+TS = 1/10           # 1/30 - controls simulation timestep, the smaller the fraction value the slower the simulation
 PATH = 'out/dump/dump'
-N_AC = 30
+N_AC = 30           # 30 - specifies the number of UAVs or aircraft
 SEED = None
-ELEC_ALG = 1    # Select leader election algorithm: 0 - gateway_heirarchy, 1 - age_ring_heirarchy, 2 - random_election
+ELEC_ALG = 1        # Select leader election algorithm: 0 - gateway_heirarchy, 1 - age_ring_heirarchy, 2 - random_election
 
 # 20240220_1452h - AOA added leader_election_alg option to make switching leader election algorithm easier from the environment definition
 env = Environment(bounds=SCREEN_SIZE,grid_centre=np.array(SCREEN_SIZE)/2, n_tasks=N_TASKS, leader_election_alg=ELEC_ALG)
